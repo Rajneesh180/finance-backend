@@ -27,6 +27,9 @@ go.work.sum
 # env file
 .env
 
+# Local dev environment (not pushed)
+.dev/
+
 # Editor/IDE
 # .idea/
 # .vscode/
