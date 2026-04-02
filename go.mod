@@ -1,6 +1,6 @@
 module github.com/Rajneesh180/finance-backend
 
-go 1.25.7
+go 1.23.0
 
 require (
 	github.com/google/uuid v1.6.0
