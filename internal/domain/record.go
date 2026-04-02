@@ -48,14 +48,14 @@ type UpdateRecordRequest struct {
 }
 
 type RecordFilter struct {
-	Type       string
-	Category   string
-	DateFrom   string
-	DateTo     string
-	Page       int
-	PerPage    int
-	SortBy     string
-	SortOrder  string
+	Type      string
+	Category  string
+	DateFrom  string
+	DateTo    string
+	Page      int
+	PerPage   int
+	SortBy    string
+	SortOrder string
 }
 
 type PaginationMeta struct {
@@ -68,12 +68,12 @@ type PaginationMeta struct {
 // Dashboard aggregation types
 
 type DashboardSummary struct {
-	TotalIncome  decimal.Decimal  `json:"total_income"`
-	TotalExpense decimal.Decimal  `json:"total_expense"`
-	NetBalance   decimal.Decimal  `json:"net_balance"`
-	RecordCount  int              `json:"record_count"`
-	ByCategory   []CategoryTotal  `json:"by_category"`
-	Trend        []TrendPoint     `json:"trend"`
+	TotalIncome  decimal.Decimal `json:"total_income"`
+	TotalExpense decimal.Decimal `json:"total_expense"`
+	NetBalance   decimal.Decimal `json:"net_balance"`
+	RecordCount  int             `json:"record_count"`
+	ByCategory   []CategoryTotal `json:"by_category"`
+	Trend        []TrendPoint    `json:"trend"`
 }
 
 type CategoryTotal struct {
