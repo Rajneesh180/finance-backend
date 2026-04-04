@@ -11,7 +11,7 @@ import (
 
 type contextKey string
 
-const claimsKey contextKey = "claims"
+const ClaimsKey contextKey = "claims"
 
 func Auth(auth *service.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -34,13 +34,13 @@ func Auth(auth *service.AuthService) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), claimsKey, claims)
+			ctx := context.WithValue(r.Context(), ClaimsKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
 func GetClaims(ctx context.Context) *service.Claims {
-	claims, _ := ctx.Value(claimsKey).(*service.Claims)
+	claims, _ := ctx.Value(ClaimsKey).(*service.Claims)
 	return claims
 }
