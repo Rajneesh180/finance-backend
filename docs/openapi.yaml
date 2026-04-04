@@ -1,0 +1,675 @@
+openapi: "3.0.3"
+info:
+  title: Finance Backend API
+  description: REST API for managing financial records with role-based access control.
+  version: "1.0.0"
+  contact:
+    name: Rajneesh Chaudhary
+    email: rajneeshrehsaan48@gmail.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, analyst, viewer]
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    FinancialRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: string
+          description: Decimal amount as string to avoid floating point issues
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DashboardSummary:
+      type: object
+      properties:
+        total_income:
+          type: string
+        total_expense:
+          type: string
+        net_balance:
+          type: string
+        record_count:
+          type: integer
+        by_category:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              total:
+                type: string
+              count:
+                type: integer
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              income:
+                type: string
+              expense:
+                type: string
+              net:
+                type: string
+
+    ActivityEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        amount:
+          type: string
+        type:
+          type: string
+          enum: [income, expense]
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags: [Health]
+      responses:
+        "200":
+          description: Service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                  minLength: 2
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already registered
+
+  /auth/login:
+    post:
+      summary: Login and get JWT token
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: "#/components/schemas/User"
+        "401":
+          description: Invalid credentials
+
+  /users/me:
+    get:
+      summary: Get current user profile
+      tags: [User Profile]
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+    put:
+      summary: Update current user profile
+      tags: [User Profile]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+      responses:
+        "200":
+          description: Profile updated
+        "409":
+          description: Email already in use
+
+  /records:
+    get:
+      summary: List financial records (paginated)
+      tags: [Financial Records]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [income, expense]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: search
+          in: query
+          description: Text search across category and description
+          schema:
+            type: string
+        - name: sort_by
+          in: query
+          schema:
+            type: string
+            enum: [date, amount, created_at, type, category]
+        - name: sort_order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        "200":
+          description: Paginated list of records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FinancialRecord"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+    post:
+      summary: Create a financial record
+      description: Requires analyst or admin role
+      tags: [Financial Records]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, type, category, date]
+              properties:
+                amount:
+                  type: string
+                  description: Positive decimal amount
+                  example: "1500.50"
+                type:
+                  type: string
+                  enum: [income, expense]
+                category:
+                  type: string
+                  maxLength: 100
+                date:
+                  type: string
+                  format: date
+                  example: "2026-04-01"
+                description:
+                  type: string
+                  maxLength: 500
+      responses:
+        "201":
+          description: Record created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/FinancialRecord"
+        "400":
+          description: Invalid amount, date, or validation error
+        "403":
+          description: Insufficient role
+
+  /records/{id}:
+    get:
+      summary: Get a financial record by ID
+      tags: [Financial Records]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Record details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/FinancialRecord"
+        "403":
+          description: Not the record owner
+        "404":
+          description: Record not found
+    put:
+      summary: Update a financial record
+      description: Requires analyst or admin role. Users can only update their own records unless admin.
+      tags: [Financial Records]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+                type:
+                  type: string
+                  enum: [income, expense]
+                category:
+                  type: string
+                date:
+                  type: string
+                  format: date
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Record updated
+        "400":
+          description: Invalid input
+        "403":
+          description: Not the record owner
+        "404":
+          description: Record not found
+    delete:
+      summary: Soft delete a financial record
+      description: Requires analyst or admin role
+      tags: [Financial Records]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Record deleted
+        "403":
+          description: Not the record owner
+        "404":
+          description: Record not found
+
+  /dashboard/summary:
+    get:
+      summary: Dashboard summary with aggregated financial data
+      description: Returns total income, expenses, net balance, category breakdown, and monthly trends. Admins see all users' data, others see only their own.
+      tags: [Dashboard]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Summary data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - properties:
+                      data:
+                        $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent:
+    get:
+      summary: Recent activity
+      description: Returns the most recent financial records ordered by creation time
+      tags: [Dashboard]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of recent entries (default 10, max 50)
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+      responses:
+        "200":
+          description: Recent activity entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ActivityEntry"
+
+  /admin/users:
+    get:
+      summary: List all users (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Paginated user list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+                  meta:
+                    $ref: "#/components/schemas/PaginationMeta"
+        "403":
+          description: Admin role required
+
+  /admin/users/{id}:
+    get:
+      summary: Get user by ID (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: User details
+        "404":
+          description: User not found
+    put:
+      summary: Update user role or status (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [admin, analyst, viewer]
+                is_active:
+                  type: boolean
+      responses:
+        "200":
+          description: User updated
+        "400":
+          description: Invalid role
+        "404":
+          description: User not found
+    delete:
+      summary: Soft delete user (admin only)
+      tags: [Admin]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: User deleted
+        "404":
+          description: User not found

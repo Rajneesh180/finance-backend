@@ -201,6 +201,7 @@ Users can only access their own records. Admins bypass ownership checks.
 | `category` | Filter by category |
 | `date_from` | Start date (YYYY-MM-DD) |
 | `date_to` | End date (YYYY-MM-DD) |
+| `search` | Text search across category and description |
 | `sort_by` | Sort field: `date`, `amount`, `created_at` |
 | `sort_order` | `asc` or `desc` |
 
@@ -209,10 +210,13 @@ Users can only access their own records. Admins bypass ownership checks.
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/dashboard/summary` | Yes | Aggregated financial summary |
+| GET | `/dashboard/recent` | Yes | Recent activity feed |
 
-Query parameters: `date_from`, `date_to`. Admins see all users' data.
+**Summary** query parameters: `date_from`, `date_to`. Admins see all users' data.
 
 Returns total income, total expenses, net balance, category breakdown, and monthly trends.
+
+**Recent activity** query parameters: `limit` (default 10, max 50). Returns the most recent financial records ordered by creation time.
 
 ### Admin
 
@@ -266,3 +270,29 @@ make migrate-down # Roll back last migration
 make docker-up    # Start all services
 make docker-down  # Stop all services
 ```
+
+## API Documentation
+
+Full OpenAPI 3.0 specification is available in `docs/openapi.yaml`. You can view it interactively by loading the file in [Swagger Editor](https://editor.swagger.io) or any OpenAPI-compatible tool.
+
+## Assumptions and Trade-offs
+
+**Money as `shopspring/decimal`:** Financial amounts use the `decimal` library instead of `float64`. Floats introduce rounding errors that compound over aggregations — not acceptable for a finance system. The amounts are stored as `NUMERIC(15,2)` in PostgreSQL and serialized as strings in JSON to avoid precision loss across the wire.
+
+**bcrypt cost factor 10 (default):** Keeps hashing under 100ms per request. For a production system with heavy auth traffic you'd tune this or offload to a dedicated auth service, but for this scope it's a reasonable middle ground between security and response time.
+
+**JWT with HS256:** Symmetric signing is simple and works well for a single-service deployment. An asymmetric scheme (RS256) would make more sense in a microservices setup where multiple services need to verify tokens independently. The token expiry defaults to 15 minutes and is configurable via `JWT_EXPIRY_MINUTES`.
+
+**Soft deletes everywhere:** Users and records are never physically deleted — a `deleted_at` timestamp is set instead. This preserves audit trails and referential integrity at the cost of slightly more complex queries (every query needs a `WHERE deleted_at IS NULL` filter). The partial index on `deleted_at IS NULL` keeps the performance impact minimal.
+
+**No refresh tokens:** The API issues a single JWT on login. A proper production flow would include refresh token rotation, but that adds significant complexity (token storage, revocation lists) beyond what's needed to demonstrate the access control and data processing patterns.
+
+**Role model is additive:** `viewer < analyst < admin`. New accounts default to `viewer` and only admins can promote. There's no fine-grained permission system — the three roles are enough to demonstrate the RBAC pattern without over-engineering.
+
+**Rate limiting is per-IP, in-memory:** The token bucket lives in a sync.Map on the server. This means it resets on restart and doesn't work across multiple instances. For a horizontally scaled deployment you'd use Redis, but for a single-instance demo it avoids the external dependency.
+
+**UUID primary keys:** Chosen over auto-increment integers to prevent enumeration attacks and simplify ID generation. The trade-off is larger index sizes and slightly slower joins, but for this data volume it's irrelevant.
+
+**Ownership enforcement at the service layer:** Records belong to the user who created them. Non-admin users can only see and modify their own data. Admins bypass ownership checks entirely — there's no "shared" or "team" concept. This keeps the authorization logic straightforward.
+
+**No ORM:** The repository layer uses raw SQL with `pgx`. This gives full control over query construction (especially the dynamic filtering in record listing) without the overhead and abstraction leakage of an ORM. The trade-off is more verbose code for simple CRUD.
