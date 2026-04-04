@@ -133,3 +133,7 @@ func (s *RecordService) List(ctx context.Context, userID *uuid.UUID, filter doma
 func (s *RecordService) Dashboard(ctx context.Context, userID *uuid.UUID, dateFrom, dateTo string) (*domain.DashboardSummary, error) {
 	return s.dashboard.GetSummary(ctx, userID, dateFrom, dateTo)
 }
+
+func (s *RecordService) RecentActivity(ctx context.Context, userID *uuid.UUID, limit int) ([]domain.ActivityEntry, error) {
+	return s.dashboard.RecentActivity(ctx, userID, limit)
+}

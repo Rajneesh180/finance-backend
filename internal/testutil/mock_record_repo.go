@@ -76,3 +76,7 @@ func (m *MockDashboardRepo) GetSummary(_ context.Context, _ *uuid.UUID, _, _ str
 		RecordCount:  5,
 	}, nil
 }
+
+func (m *MockDashboardRepo) RecentActivity(_ context.Context, _ *uuid.UUID, limit int) ([]domain.ActivityEntry, error) {
+	return []domain.ActivityEntry{}, nil
+}

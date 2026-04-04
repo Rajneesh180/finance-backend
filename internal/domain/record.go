@@ -52,6 +52,7 @@ type RecordFilter struct {
 	Category  string
 	DateFrom  string
 	DateTo    string
+	Search    string
 	Page      int
 	PerPage   int
 	SortBy    string
@@ -87,4 +88,15 @@ type TrendPoint struct {
 	Income  decimal.Decimal `json:"income"`
 	Expense decimal.Decimal `json:"expense"`
 	Net     decimal.Decimal `json:"net"`
+}
+
+type ActivityEntry struct {
+	ID          uuid.UUID       `json:"id"`
+	UserID      uuid.UUID       `json:"user_id"`
+	Amount      decimal.Decimal `json:"amount"`
+	Type        RecordType      `json:"type"`
+	Category    string          `json:"category"`
+	Date        time.Time       `json:"date"`
+	Description *string         `json:"description,omitempty"`
+	CreatedAt   time.Time       `json:"created_at"`
 }

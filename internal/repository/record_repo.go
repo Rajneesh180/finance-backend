@@ -112,6 +112,12 @@ func (r *recordRepo) List(ctx context.Context, userID *uuid.UUID, filter domain.
 		args = append(args, filter.DateTo)
 		argIdx++
 	}
+	if filter.Search != "" {
+		where = append(where, fmt.Sprintf("(category ILIKE $%d OR description ILIKE $%d)", argIdx, argIdx+1))
+		pattern := "%" + filter.Search + "%"
+		args = append(args, pattern, pattern)
+		argIdx += 2
+	}
 
 	whereClause := strings.Join(where, " AND ")
 

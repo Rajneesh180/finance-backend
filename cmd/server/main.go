@@ -90,6 +90,7 @@ func main() {
 
 		// Dashboard
 		r.Get("/dashboard/summary", dashHandler.Summary)
+		r.Get("/dashboard/recent", dashHandler.RecentActivity)
 
 		// Admin routes
 		r.Route("/admin", func(r chi.Router) {

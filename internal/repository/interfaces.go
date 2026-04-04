@@ -26,4 +26,5 @@ type RecordRepository interface {
 
 type DashboardRepository interface {
 	GetSummary(ctx context.Context, userID *uuid.UUID, dateFrom, dateTo string) (*domain.DashboardSummary, error)
+	RecentActivity(ctx context.Context, userID *uuid.UUID, limit int) ([]domain.ActivityEntry, error)
 }

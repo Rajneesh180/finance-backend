@@ -151,6 +151,7 @@ func (h *RecordHandler) List(w http.ResponseWriter, r *http.Request) {
 		Category:  q.Get("category"),
 		DateFrom:  q.Get("date_from"),
 		DateTo:    q.Get("date_to"),
+		Search:    q.Get("search"),
 		SortBy:    q.Get("sort_by"),
 		SortOrder: q.Get("sort_order"),
 	}

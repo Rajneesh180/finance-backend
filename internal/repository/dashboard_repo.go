@@ -109,3 +109,45 @@ func (r *dashboardRepo) GetSummary(ctx context.Context, userID *uuid.UUID, dateF
 
 	return summary, nil
 }
+
+func (r *dashboardRepo) RecentActivity(ctx context.Context, userID *uuid.UUID, limit int) ([]domain.ActivityEntry, error) {
+	where := []string{"deleted_at IS NULL"}
+	args := []interface{}{}
+	argIdx := 1
+
+	if userID != nil {
+		where = append(where, fmt.Sprintf("user_id = $%d", argIdx))
+		args = append(args, *userID)
+		argIdx++
+	}
+
+	if limit < 1 || limit > 50 {
+		limit = 10
+	}
+
+	whereClause := strings.Join(where, " AND ")
+	query := fmt.Sprintf(
+		`SELECT id, user_id, amount, type, category, date, description, created_at
+		 FROM financial_records WHERE %s ORDER BY created_at DESC LIMIT $%d`,
+		whereClause, argIdx,
+	)
+	args = append(args, limit)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("querying recent activity: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []domain.ActivityEntry
+	for rows.Next() {
+		var e domain.ActivityEntry
+		var amount decimal.Decimal
+		if err := rows.Scan(&e.ID, &e.UserID, &amount, &e.Type, &e.Category, &e.Date, &e.Description, &e.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scanning activity: %w", err)
+		}
+		e.Amount = amount
+		entries = append(entries, e)
+	}
+	return entries, nil
+}
