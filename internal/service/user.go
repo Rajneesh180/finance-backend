@@ -11,8 +11,11 @@ import (
 )
 
 var (
-	ErrEmailTaken   = errors.New("email already in use")
-	ErrUserNotFound = errors.New("user not found")
+	ErrEmailTaken         = errors.New("email already in use")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrAccountDeactivated = errors.New("account is deactivated")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidRole        = errors.New("invalid role")
 )
 
 type UserService struct {
@@ -56,10 +59,10 @@ func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (strin
 		return "", nil, ErrUserNotFound
 	}
 	if !user.IsActive {
-		return "", nil, errors.New("account is deactivated")
+		return "", nil, ErrAccountDeactivated
 	}
 	if !s.auth.CheckPassword(user.Password, req.Password) {
-		return "", nil, errors.New("invalid credentials")
+		return "", nil, ErrInvalidCredentials
 	}
 
 	token, err := s.auth.GenerateToken(user)
@@ -108,7 +111,7 @@ func (s *UserService) AdminUpdate(ctx context.Context, id uuid.UUID, req domain.
 
 	if req.Role != nil {
 		if !req.Role.IsValid() {
-			return nil, errors.New("invalid role")
+			return nil, ErrInvalidRole
 		}
 		user.Role = *req.Role
 	}

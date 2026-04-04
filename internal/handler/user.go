@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
@@ -11,20 +12,15 @@ import (
 	"github.com/Rajneesh180/finance-backend/internal/middleware"
 	"github.com/Rajneesh180/finance-backend/internal/service"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
 type UserHandler struct {
-	userSvc  *service.UserService
-	validate *validator.Validate
+	userSvc *service.UserService
 }
 
 func NewUserHandler(userSvc *service.UserService) *UserHandler {
-	return &UserHandler{
-		userSvc:  userSvc,
-		validate: validator.New(),
-	}
+	return &UserHandler{userSvc: userSvc}
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
@@ -45,14 +41,14 @@ func (h *UserHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 
 	user, err := h.userSvc.UpdateProfile(r.Context(), claims.UserID, req)
 	if err != nil {
-		if err == service.ErrEmailTaken {
+		if errors.Is(err, service.ErrEmailTaken) {
 			api.Conflict(w, "email already in use")
 			return
 		}
@@ -88,18 +84,21 @@ func (h *UserHandler) AdminUpdateUser(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 
 	user, err := h.userSvc.AdminUpdate(r.Context(), id, req)
 	if err != nil {
-		if err == service.ErrUserNotFound {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
 			api.NotFound(w, "user not found")
-			return
+		case errors.Is(err, service.ErrInvalidRole):
+			api.BadRequest(w, "invalid role")
+		default:
+			api.InternalError(w)
 		}
-		api.InternalError(w)
 		return
 	}
 	api.JSON(w, http.StatusOK, user)
@@ -112,7 +111,7 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.userSvc.Delete(r.Context(), id); err != nil {
-		if err == service.ErrUserNotFound {
+		if errors.Is(err, service.ErrUserNotFound) {
 			api.NotFound(w, "user not found")
 			return
 		}

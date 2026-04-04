@@ -13,10 +13,11 @@ import (
 )
 
 var (
-	ErrRecordNotFound = errors.New("record not found")
-	ErrNotOwner       = errors.New("not the record owner")
-	ErrInvalidAmount  = errors.New("invalid amount")
-	ErrInvalidDate    = errors.New("invalid date format, use YYYY-MM-DD")
+	ErrRecordNotFound    = errors.New("record not found")
+	ErrNotOwner          = errors.New("not the record owner")
+	ErrInvalidAmount     = errors.New("invalid amount")
+	ErrInvalidDate       = errors.New("invalid date format, use YYYY-MM-DD")
+	ErrInvalidRecordType = errors.New("invalid record type")
 )
 
 type RecordService struct {
@@ -90,7 +91,7 @@ func (s *RecordService) Update(ctx context.Context, id, userID uuid.UUID, isAdmi
 	if req.Type != nil {
 		rt := domain.RecordType(*req.Type)
 		if !rt.IsValid() {
-			return nil, errors.New("invalid record type")
+			return nil, ErrInvalidRecordType
 		}
 		record.Type = rt
 	}

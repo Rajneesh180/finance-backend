@@ -52,6 +52,9 @@ func main() {
 
 	// Router
 	r := chi.NewRouter()
+	limiter := middleware.NewRateLimiter(10, 20) // 10 req/s, burst of 20
+	r.Use(limiter.Limit)
+	r.Use(middleware.CORS("*"))
 	r.Use(middleware.RequestLogger(logger))
 
 	// Health check

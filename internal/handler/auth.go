@@ -2,24 +2,20 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Rajneesh180/finance-backend/internal/api"
 	"github.com/Rajneesh180/finance-backend/internal/domain"
 	"github.com/Rajneesh180/finance-backend/internal/service"
-	"github.com/go-playground/validator/v10"
 )
 
 type AuthHandler struct {
-	userSvc  *service.UserService
-	validate *validator.Validate
+	userSvc *service.UserService
 }
 
 func NewAuthHandler(userSvc *service.UserService) *AuthHandler {
-	return &AuthHandler{
-		userSvc:  userSvc,
-		validate: validator.New(),
-	}
+	return &AuthHandler{userSvc: userSvc}
 }
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
@@ -28,14 +24,14 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 
 	user, err := h.userSvc.Register(r.Context(), req)
 	if err != nil {
-		if err == service.ErrEmailTaken {
+		if errors.Is(err, service.ErrEmailTaken) {
 			api.Conflict(w, "email already registered")
 			return
 		}
@@ -52,8 +48,8 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 

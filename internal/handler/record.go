@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"strconv"
@@ -11,20 +12,15 @@ import (
 	"github.com/Rajneesh180/finance-backend/internal/middleware"
 	"github.com/Rajneesh180/finance-backend/internal/service"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
 type RecordHandler struct {
 	recordSvc *service.RecordService
-	validate  *validator.Validate
 }
 
 func NewRecordHandler(recordSvc *service.RecordService) *RecordHandler {
-	return &RecordHandler{
-		recordSvc: recordSvc,
-		validate:  validator.New(),
-	}
+	return &RecordHandler{recordSvc: recordSvc}
 }
 
 func (h *RecordHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -35,17 +31,17 @@ func (h *RecordHandler) Create(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 
 	record, err := h.recordSvc.Create(r.Context(), claims.UserID, req)
 	if err != nil {
-		switch err {
-		case service.ErrInvalidAmount:
+		switch {
+		case errors.Is(err, service.ErrInvalidAmount):
 			api.BadRequest(w, "amount must be a positive number")
-		case service.ErrInvalidDate:
+		case errors.Is(err, service.ErrInvalidDate):
 			api.BadRequest(w, err.Error())
 		default:
 			api.InternalError(w)
@@ -67,10 +63,10 @@ func (h *RecordHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	isAdmin := claims.Role == domain.RoleAdmin
 	record, err := h.recordSvc.GetByID(r.Context(), id, claims.UserID, isAdmin)
 	if err != nil {
-		switch err {
-		case service.ErrRecordNotFound:
+		switch {
+		case errors.Is(err, service.ErrRecordNotFound):
 			api.NotFound(w, "record not found")
-		case service.ErrNotOwner:
+		case errors.Is(err, service.ErrNotOwner):
 			api.Forbidden(w, "not your record")
 		default:
 			api.InternalError(w)
@@ -94,23 +90,25 @@ func (h *RecordHandler) Update(w http.ResponseWriter, r *http.Request) {
 		api.BadRequest(w, "invalid request body")
 		return
 	}
-	if err := h.validate.Struct(req); err != nil {
-		api.BadRequest(w, err.Error())
+	if err := api.Validate.Struct(req); err != nil {
+		api.BadRequest(w, api.ValidationErrors(err))
 		return
 	}
 
 	isAdmin := claims.Role == domain.RoleAdmin
 	record, err := h.recordSvc.Update(r.Context(), id, claims.UserID, isAdmin, req)
 	if err != nil {
-		switch err {
-		case service.ErrRecordNotFound:
+		switch {
+		case errors.Is(err, service.ErrRecordNotFound):
 			api.NotFound(w, "record not found")
-		case service.ErrNotOwner:
+		case errors.Is(err, service.ErrNotOwner):
 			api.Forbidden(w, "not your record")
-		case service.ErrInvalidAmount:
+		case errors.Is(err, service.ErrInvalidAmount):
 			api.BadRequest(w, "amount must be a positive number")
-		case service.ErrInvalidDate:
+		case errors.Is(err, service.ErrInvalidDate):
 			api.BadRequest(w, err.Error())
+		case errors.Is(err, service.ErrInvalidRecordType):
+			api.BadRequest(w, "invalid record type")
 		default:
 			api.InternalError(w)
 		}
@@ -130,10 +128,10 @@ func (h *RecordHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	isAdmin := claims.Role == domain.RoleAdmin
 	if err := h.recordSvc.Delete(r.Context(), id, claims.UserID, isAdmin); err != nil {
-		switch err {
-		case service.ErrRecordNotFound:
+		switch {
+		case errors.Is(err, service.ErrRecordNotFound):
 			api.NotFound(w, "record not found")
-		case service.ErrNotOwner:
+		case errors.Is(err, service.ErrNotOwner):
 			api.Forbidden(w, "not your record")
 		default:
 			api.InternalError(w)
