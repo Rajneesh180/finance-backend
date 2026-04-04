@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/Rajneesh180/finance-backend/internal/api"
@@ -35,6 +36,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 			api.Conflict(w, "email already registered")
 			return
 		}
+		slog.Error("register failed", "error", err)
 		api.InternalError(w)
 		return
 	}

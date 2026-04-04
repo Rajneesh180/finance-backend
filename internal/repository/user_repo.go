@@ -28,7 +28,7 @@ func (r *userRepo) Create(ctx context.Context, user *domain.User) error {
 	user.IsActive = true
 
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO users (id, email, password_hash, name, role, is_active, created_at, updated_at)
+		`INSERT INTO users (id, email, password, name, role, is_active, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		user.ID, user.Email, user.Password, user.Name, user.Role, user.IsActive, user.CreatedAt, user.UpdatedAt,
 	)
@@ -41,7 +41,7 @@ func (r *userRepo) Create(ctx context.Context, user *domain.User) error {
 func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	var u domain.User
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, name, role, is_active, created_at, updated_at
+		`SELECT id, email, password, name, role, is_active, created_at, updated_at
 		 FROM users WHERE id = $1 AND deleted_at IS NULL`, id,
 	).Scan(&u.ID, &u.Email, &u.Password, &u.Name, &u.Role, &u.IsActive, &u.CreatedAt, &u.UpdatedAt)
 
@@ -57,7 +57,7 @@ func (r *userRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, err
 func (r *userRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var u domain.User
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, name, role, is_active, created_at, updated_at
+		`SELECT id, email, password, name, role, is_active, created_at, updated_at
 		 FROM users WHERE email = $1 AND deleted_at IS NULL`, email,
 	).Scan(&u.ID, &u.Email, &u.Password, &u.Name, &u.Role, &u.IsActive, &u.CreatedAt, &u.UpdatedAt)
 

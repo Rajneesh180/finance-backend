@@ -22,6 +22,7 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -33,6 +34,10 @@ func main() {
 		log.Fatalf("connecting to database: %v", err)
 	}
 	defer pool.Close()
+
+	if err := database.RunMigrations(context.Background(), pool); err != nil {
+		log.Fatalf("running migrations: %v", err)
+	}
 
 	// Repositories
 	userRepo := repository.NewUserRepository(pool)
@@ -57,7 +62,11 @@ func main() {
 	r.Use(middleware.CORS("*"))
 	r.Use(middleware.RequestLogger(logger))
 
-	// Health check
+	// Root and health
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"service":"finance-backend","version":"1.0.0","docs":"/health"}`))
+	})
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
