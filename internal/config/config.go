@@ -11,13 +11,15 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret   string
 	JWTExpiry   int
+	CORSOrigins string
 }
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:      getEnv("PORT", "8080"),
-		JWTSecret: os.Getenv("JWT_SECRET"),
-		JWTExpiry: getEnvInt("JWT_EXPIRY_MINUTES", 15),
+		Port:        getEnv("PORT", "8080"),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
+		JWTExpiry:   getEnvInt("JWT_EXPIRY_MINUTES", 15),
+		CORSOrigins: getEnv("CORS_ORIGINS", "*"),
 	}
 
 	cfg.DatabaseURL = os.Getenv("DATABASE_URL")

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -60,7 +61,8 @@ func main() {
 	r := chi.NewRouter()
 	limiter := middleware.NewRateLimiter(10, 20) // 10 req/s, burst of 20
 	r.Use(limiter.Limit)
-	r.Use(middleware.CORS("*"))
+	r.Use(middleware.MaxBodySize(1 << 20)) // 1MB
+	r.Use(middleware.CORS(strings.Split(cfg.CORSOrigins, ",")...))
 	r.Use(middleware.RequestLogger(logger))
 
 	// Root and health
