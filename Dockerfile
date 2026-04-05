@@ -14,7 +14,6 @@ RUN apk add --no-cache ca-certificates tzdata && \
     addgroup -g 1000 app && adduser -D -u 1000 -G app app
 
 COPY --from=builder /bin/server /bin/server
-COPY migrations/ /app/migrations/
 
 WORKDIR /app
 USER app
@@ -22,6 +21,6 @@ USER app
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://localhost:8080/health || exit 1
+    CMD wget -qO- http://localhost:8080/health || exit 1
 
 CMD ["/bin/server"]
