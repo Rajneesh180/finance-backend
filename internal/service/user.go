@@ -58,6 +58,9 @@ func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (strin
 	if err != nil {
 		return "", nil, ErrUserNotFound
 	}
+	if user == nil {
+		return "", nil, ErrInvalidCredentials
+	}
 	if !user.IsActive {
 		return "", nil, ErrAccountDeactivated
 	}
@@ -77,12 +80,15 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, 
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
 	return user, nil
 }
 
 func (s *UserService) UpdateProfile(ctx context.Context, id uuid.UUID, req domain.UpdateProfileRequest) (*domain.User, error) {
 	user, err := s.repo.GetByID(ctx, id)
-	if err != nil {
+	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
 
@@ -105,7 +111,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, id uuid.UUID, req domai
 
 func (s *UserService) AdminUpdate(ctx context.Context, id uuid.UUID, req domain.AdminUpdateUserRequest) (*domain.User, error) {
 	user, err := s.repo.GetByID(ctx, id)
-	if err != nil {
+	if err != nil || user == nil {
 		return nil, ErrUserNotFound
 	}
 
@@ -126,7 +132,8 @@ func (s *UserService) AdminUpdate(ctx context.Context, id uuid.UUID, req domain.
 }
 
 func (s *UserService) Delete(ctx context.Context, id uuid.UUID) error {
-	if _, err := s.repo.GetByID(ctx, id); err != nil {
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil || user == nil {
 		return ErrUserNotFound
 	}
 	return s.repo.Delete(ctx, id)

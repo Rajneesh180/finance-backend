@@ -252,9 +252,9 @@ Migration `003_seed_data` creates three test users (password: `password123`):
 
 | Email | Role |
 |---|---|
-| admin@finance.local | admin |
-| analyst@finance.local | analyst |
-| viewer@finance.local | viewer |
+| admin@zorvyn.com | admin |
+| analyst@zorvyn.com | analyst |
+| viewer@zorvyn.com | viewer |
 
 It also creates 8 sample financial records for the analyst user.
 

@@ -1,17 +1,16 @@
 -- Seed data: default admin, analyst, and viewer users
 -- Passwords are bcrypt hashes of "password123"
--- $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
 
 INSERT INTO users (id, email, password, name, role, is_active)
 VALUES
   ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'admin@zorvyn.com',
-   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+   '$2a$10$tSl4EQJxzs3GhBTVySZYuuPO8YMKLp1ZzWfjPypVdmowu58mZ3iAG',
    'Admin User', 'admin', true),
   ('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22', 'analyst@zorvyn.com',
-   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+   '$2a$10$tSl4EQJxzs3GhBTVySZYuuPO8YMKLp1ZzWfjPypVdmowu58mZ3iAG',
    'Analyst User', 'analyst', true),
   ('c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33', 'viewer@zorvyn.com',
-   '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+   '$2a$10$tSl4EQJxzs3GhBTVySZYuuPO8YMKLp1ZzWfjPypVdmowu58mZ3iAG',
    'Viewer User', 'viewer', true)
 ON CONFLICT (email) DO NOTHING;
 

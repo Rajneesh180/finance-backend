@@ -63,7 +63,7 @@ func (s *RecordService) Create(ctx context.Context, userID uuid.UUID, req domain
 
 func (s *RecordService) GetByID(ctx context.Context, id, userID uuid.UUID, isAdmin bool) (*domain.FinancialRecord, error) {
 	record, err := s.repo.GetByID(ctx, id)
-	if err != nil {
+	if err != nil || record == nil {
 		return nil, ErrRecordNotFound
 	}
 	if !isAdmin && record.UserID != userID {
@@ -74,7 +74,7 @@ func (s *RecordService) GetByID(ctx context.Context, id, userID uuid.UUID, isAdm
 
 func (s *RecordService) Update(ctx context.Context, id, userID uuid.UUID, isAdmin bool, req domain.UpdateRecordRequest) (*domain.FinancialRecord, error) {
 	record, err := s.repo.GetByID(ctx, id)
-	if err != nil {
+	if err != nil || record == nil {
 		return nil, ErrRecordNotFound
 	}
 	if !isAdmin && record.UserID != userID {
@@ -117,7 +117,7 @@ func (s *RecordService) Update(ctx context.Context, id, userID uuid.UUID, isAdmi
 
 func (s *RecordService) Delete(ctx context.Context, id, userID uuid.UUID, isAdmin bool) error {
 	record, err := s.repo.GetByID(ctx, id)
-	if err != nil {
+	if err != nil || record == nil {
 		return ErrRecordNotFound
 	}
 	if !isAdmin && record.UserID != userID {

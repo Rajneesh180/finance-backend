@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"log/slog"
 	"net/http"
@@ -65,7 +66,11 @@ func main() {
 	// Root and health
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service":"finance-backend","version":"1.0.0","docs":"/health"}`))
+		json.NewEncoder(w).Encode(map[string]string{
+			"service": "finance-backend",
+			"status":  "running",
+			"docs":    "https://github.com/Rajneesh180/finance-backend",
+		})
 	})
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
