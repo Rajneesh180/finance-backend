@@ -20,6 +20,8 @@ type RateLimiter struct {
 	burst    float64 // max tokens
 }
 
+// TODO: swap this for x/time/rate or Redis if we ever need multiple instances
+
 func NewRateLimiter(rps float64, burst int) *RateLimiter {
 	rl := &RateLimiter{
 		visitors: make(map[string]*visitor),

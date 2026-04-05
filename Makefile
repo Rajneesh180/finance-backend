@@ -1,4 +1,4 @@
-.PHONY: build run test lint migrate-up migrate-down seed docker-up docker-down
+.PHONY: build run test lint migrate-up migrate-down docker-up docker-down
 
 APP_NAME := finance-backend
 DB_URL ?= postgres://postgres:postgres@localhost:5432/finance?sslmode=disable
@@ -16,16 +16,13 @@ lint:
 	golangci-lint run ./...
 
 migrate-up:
-	migrate -path migrations -database "$(DB_URL)" up
+	migrate -path internal/database/migrations -database "$(DB_URL)" up
 
 migrate-down:
-	migrate -path migrations -database "$(DB_URL)" down 1
+	migrate -path internal/database/migrations -database "$(DB_URL)" down 1
 
 docker-up:
 	docker compose up --build -d
 
 docker-down:
 	docker compose down
-
-seed:
-	go run ./scripts/seed.go

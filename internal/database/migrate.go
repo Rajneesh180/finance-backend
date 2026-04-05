@@ -14,6 +14,10 @@ import (
 //go:embed migrations/*.sql
 var migrationFS embed.FS
 
+// Simple migration runner — reads .sql files from the embedded FS and applies
+// them in order. Tracks applied versions in a schema_migrations table.
+// Not production-grade (no locking, no down migrations at runtime) but good
+// enough for a single-instance deploy.
 func RunMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	_, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS schema_migrations (

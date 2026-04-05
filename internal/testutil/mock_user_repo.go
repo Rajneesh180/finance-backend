@@ -2,11 +2,14 @@ package testutil
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/Rajneesh180/finance-backend/internal/domain"
 	"github.com/google/uuid"
 )
+
+var ErrNotFound = errors.New("not found")
 
 type MockUserRepo struct {
 	mu    sync.Mutex
@@ -29,7 +32,7 @@ func (m *MockUserRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.User, e
 	defer m.mu.Unlock()
 	u, ok := m.users[id]
 	if !ok {
-		return nil, context.Canceled // stand-in for "not found"
+		return nil, ErrNotFound
 	}
 	return u, nil
 }
@@ -42,7 +45,7 @@ func (m *MockUserRepo) GetByEmail(_ context.Context, email string) (*domain.User
 			return u, nil
 		}
 	}
-	return nil, context.Canceled
+	return nil, ErrNotFound
 }
 
 func (m *MockUserRepo) Update(_ context.Context, user *domain.User) error {

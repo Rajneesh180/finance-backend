@@ -30,7 +30,7 @@ func (m *MockRecordRepo) GetByID(_ context.Context, id uuid.UUID) (*domain.Finan
 	defer m.mu.Unlock()
 	r, ok := m.records[id]
 	if !ok {
-		return nil, context.Canceled
+		return nil, ErrNotFound
 	}
 	return r, nil
 }
